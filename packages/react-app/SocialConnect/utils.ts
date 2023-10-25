@@ -9,6 +9,8 @@ export const ODIS_PAYMENTS_CONTRACT = require("./abis/OdisPayments.json");
 export const STABLE_TOKEN_CONTRACT = require("./abis/StableToken.json");
 export const ACCOUNTS_CONTRACT = require("./abis/Accounts.json");
 
+// Get addresses from here - https://github.com/celo-org/social-connect/blob/main/docs/protocol.md#smart-contract-addresses
+
 export const RPC =
   process.env.NEXT_PUBLIC_ENVIRONMENT === "TESTNET"
     ? "https://alfajores-forno.celo-testnet.org"
