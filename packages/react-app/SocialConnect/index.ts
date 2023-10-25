@@ -1,3 +1,4 @@
+// Import necessary modules and types from various libraries
 import { OdisUtils } from "@celo/identity";
 import { IdentifierPrefix } from "@celo/identity/lib/odis/identifier";
 import { AuthSigner, ServiceContext } from "@celo/identity/lib/odis/query";
@@ -13,21 +14,26 @@ import {
   STABLE_TOKEN_CONTRACT,
 } from "./utils";
 
-export const ONE_CENT_CUSD = parseEther("0.01");
+// Define constants
+export const ONE_CENT_CUSD = parseEther("0.01"); // Represents 0.01 cUSD in wei
+export const NOW_TIMESTAMP = Math.floor(new Date().getTime() / 1000); // Current UNIX timestamp
 
-export const NOW_TIMESTAMP = Math.floor(new Date().getTime() / 1000);
-
+// Define the SocialConnectIssuer class
 export class SocialConnectIssuer {
+  // Declare class properties
   private readonly federatedAttestationsContract: Contract;
   private readonly odisPaymentsContract: Contract;
   private readonly stableTokenContract: Contract;
   readonly serviceContext: ServiceContext;
 
+  // Constructor for the class
   constructor(
-    private readonly wallet: Wallet,
-    private readonly authSigner: AuthSigner
+    private readonly wallet: Wallet, // User's wallet
+    private readonly authSigner: AuthSigner // Signer for authentication
   ) {
+    // Initialize the service context
     this.serviceContext = OdisUtils.Query.getServiceContext(SERVICE_CONTEXT);
+    // Initialize contracts with their respective ABI and addresses
     this.federatedAttestationsContract = new Contract(
       FA_PROXY_ADDRESS,
       FA_CONTRACT.abi,
@@ -45,8 +51,9 @@ export class SocialConnectIssuer {
     );
   }
 
+  // Method to get obfuscated ID
   async getObfuscatedId(plaintextId: string, identifierType: IdentifierPrefix) {
-    // TODO look into client side blinding
+    // Fetch the obfuscated identifier using OdisUtils
     const { obfuscatedIdentifier } =
       await OdisUtils.Identifier.getObfuscatedIdentifier(
         plaintextId,
@@ -58,26 +65,28 @@ export class SocialConnectIssuer {
     return obfuscatedIdentifier;
   }
 
+  // Method to check and top up ODIS quota
   async checkAndTopUpODISQuota() {
     const remainingQuota = await this.checkODISQuota();
 
+    // If quota is less than 1, top it up
     if (remainingQuota < 1) {
-      // TODO make threshold a constant
       const approvalTxReceipt = (
         await this.stableTokenContract.increaseAllowance(
           this.odisPaymentsContract.address,
-          ONE_CENT_CUSD // TODO we should increase by more
+          ONE_CENT_CUSD
         )
       ).wait();
       const odisPaymentTxReceipt = (
         await this.odisPaymentsContract.payInCUSD(
           this.wallet.address,
-          ONE_CENT_CUSD // TODO we should increase by more
+          ONE_CENT_CUSD
         )
       ).wait();
     }
   }
 
+  // Method to get obfuscated ID with retry logic in case of quota issues
   async getObfuscatedIdWithQuotaRetry(
     plaintextId: string,
     identifierType: IdentifierPrefix
@@ -90,6 +99,7 @@ export class SocialConnectIssuer {
     }
   }
 
+  // Method to register an on-chain identifier
   async registerOnChainIdentifier(
     plaintextId: string,
     identifierType: IdentifierPrefix,
@@ -102,7 +112,6 @@ export class SocialConnectIssuer {
 
     const tx =
       await this.federatedAttestationsContract.registerAttestationAsIssuer(
-        // TODO check if there are better code patterns for sending txs
         obfuscatedId,
         address,
         NOW_TIMESTAMP
@@ -111,6 +120,7 @@ export class SocialConnectIssuer {
     return receipt;
   }
 
+  // Method to deregister an on-chain identifier
   async deregisterOnChainIdentifier(
     plaintextId: string,
     identifierType: IdentifierPrefix,
@@ -129,6 +139,7 @@ export class SocialConnectIssuer {
     return receipt;
   }
 
+  // Method to check the remaining ODIS quota
   async checkODISQuota() {
     const { remainingQuota } = await OdisUtils.Quota.getPnpQuotaStatus(
       this.wallet.address,
@@ -139,6 +150,7 @@ export class SocialConnectIssuer {
     return remainingQuota;
   }
 
+  // Method to lookup attestations
   async lookup(
     plaintextId: string,
     identifierType: IdentifierPrefix,
@@ -155,7 +167,7 @@ export class SocialConnectIssuer {
       );
 
     return {
-      accounts: attestations.accounts as string[], // TODO typesafety
+      accounts: attestations.accounts as string[],
       obfuscatedId,
     };
   }

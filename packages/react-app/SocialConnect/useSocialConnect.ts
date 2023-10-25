@@ -20,6 +20,7 @@ export const useSocialConnect = () => {
     }
   }, [address]);
 
+  // This code defines a function that returns an identifier prefix based on the value of an environment variable.
   const getIdentifierPrefix = () => {
     if (process.env.NEXT_PUBLIC_SOCIAL_CONNECT_PROVIDER === "TWITTER") {
       return IdentifierPrefix.TWITTER;
@@ -29,6 +30,15 @@ export const useSocialConnect = () => {
     return IdentifierPrefix.TWITTER;
   };
 
+  /**
+   * Looks up the address associated with the given identifier by making a GET request
+   * to the "/api/socialconnect/lookup" endpoint with the identifier and its type as query
+   * parameters. Returns the first account in the response if there is any. Uses the
+   * getIdentifierPrefix() function to determine the identifier type.
+   *
+   * @param identifier The identifier to look up the address for.
+   * @returns The first account in the response, or undefined if there is none.
+   */
   const lookupAddress = async (identifier: string) => {
     if (walletClient) {
       let response: Response = await fetch(
@@ -48,6 +58,15 @@ export const useSocialConnect = () => {
     }
   };
 
+  /**
+   * Registers the given identifier for the current wallet client by making a POST request
+   * to the "/api/socialconnect/register" endpoint with the account address, identifier, and
+   * identifier type as the request body. Returns true if the registration is successful,
+   * false otherwise. Uses the getIdentifierPrefix() function to determine the identifier type.
+   *
+   * @param identifier The identifier to register.
+   * @returns True if the registration is successful, false otherwise.
+   */
   const register = async (identifier: string) => {
     if (walletClient) {
       try {
@@ -77,6 +96,14 @@ export const useSocialConnect = () => {
     }
   };
 
+  /**
+   * Revokes the given identifier for the current wallet client by making a POST request
+   * to the "/api/socialconnect/revoke" endpoint with the account address, identifier, and
+   * identifier type as the request body. Uses the getIdentifierPrefix() function to determine
+   * the identifier type. If the response contains an error, logs it to the console.
+   *
+   * @param identifier The identifier to revoke.
+   */
   const revoke = async (identifier: string) => {
     if (walletClient) {
       try {
