@@ -54,6 +54,7 @@ export class SocialConnectIssuer {
   // Method to get obfuscated ID
   async getObfuscatedId(plaintextId: string, identifierType: IdentifierPrefix) {
     // Fetch the obfuscated identifier using OdisUtils
+    await this.checkAndTopUpODISQuota();
     const { obfuscatedIdentifier } =
       await OdisUtils.Identifier.getObfuscatedIdentifier(
         plaintextId,
@@ -73,15 +74,13 @@ export class SocialConnectIssuer {
     if (remainingQuota < 1) {
       const approvalTxReceipt = (
         await this.stableTokenContract.increaseAllowance(
-          this.odisPaymentsContract.address,
+          ODIS_PAYMENTS_PROXY_ADDRESS,
           ONE_CENT_CUSD
         )
       ).wait();
+      const walletAddress = await this.wallet.getAddress();
       const odisPaymentTxReceipt = (
-        await this.odisPaymentsContract.payInCUSD(
-          this.wallet.address,
-          ONE_CENT_CUSD
-        )
+        await this.odisPaymentsContract.payInCUSD(walletAddress, ONE_CENT_CUSD)
       ).wait();
     }
   }
