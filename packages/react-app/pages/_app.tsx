@@ -1,48 +1,56 @@
-import { Alfajores, Celo } from "@celo/rainbowkit-celo/chains";
-import celoGroups from "@celo/rainbowkit-celo/lists";
-import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
+import {
+  RainbowKitProvider,
+  connectorsForWallets,
+} from "@rainbow-me/rainbowkit";
 import "@rainbow-me/rainbowkit/styles.css";
+import { injectedWallet } from "@rainbow-me/rainbowkit/wallets";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps } from "next/app";
-import { WagmiConfig, configureChains, createConfig } from "wagmi";
-import { publicProvider } from "wagmi/providers/public";
+import { celo, celoAlfajores } from "viem/chains";
+import { WagmiProvider, createConfig, http } from "wagmi";
 import Layout from "../components/Layout";
 import "../styles/globals.css";
 
 const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID as string; // get one at https://cloud.walletconnect.com/app
 
-const { chains, publicClient } = configureChains(
-  [Celo, Alfajores],
-  [publicProvider()]
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: "Recommended",
+      wallets: [injectedWallet],
+    },
+  ],
+  {
+    appName: "Celo Composer",
+    projectId,
+  }
 );
 
-const connectors = celoGroups({
-  chains,
-  projectId,
-  appName: (typeof document === "object" && document.title) || "Your App Name",
-});
-
-const appInfo = {
-  appName: "Celo Composer",
-};
-
-const wagmiConfig = createConfig({
+const config = createConfig({
   connectors,
-  publicClient: publicClient,
-  autoConnect: true,
+  chains: [celo, celoAlfajores],
+  transports: {
+    [celo.id]: http(),
+    [celoAlfajores.id]: http(),
+  },
 });
+
+const queryClient = new QueryClient();
 
 function App({ Component, pageProps }: AppProps) {
   return (
-    <WagmiConfig config={wagmiConfig}>
-      <RainbowKitProvider chains={chains} appInfo={appInfo} coolMode={true}>
-        <SessionProvider>
-          <Layout>
-            <Component {...pageProps} />
-          </Layout>
-        </SessionProvider>
-      </RainbowKitProvider>
-    </WagmiConfig>
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider>
+          <SessionProvider>
+            <Layout>
+              <Component {...pageProps} />
+            </Layout>
+          </SessionProvider>
+        </RainbowKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }
 
